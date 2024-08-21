@@ -1,3 +1,5 @@
+// This creates a Windows or Linux reverse shell spawning /bin/bash or cmd.exe
+
 package main
 
 import (
