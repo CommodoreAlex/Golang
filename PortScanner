@@ -1,0 +1,79 @@
+package main
+
+import (
+	"fmt"
+	"net"
+	"strconv"
+	"strings"
+	"time"
+)
+
+// Function to get a valid integer input from the user
+func getIntInput(prompt string) int {
+	var input string
+	for {
+		fmt.Print(prompt)
+		_, err := fmt.Scan(&input)
+		if err != nil {
+			fmt.Println("Invalid input:", err)
+			continue
+		}
+		value, err := strconv.Atoi(strings.TrimSpace(input))
+		if err != nil {
+			fmt.Println("Invalid number. Please enter a valid integer.")
+			continue
+		}
+		return value
+	}
+}
+
+// Function to scan a single port
+func scanPort(ip string, port int) bool {
+	address := fmt.Sprintf("%s:%d", ip, port)
+	conn, err := net.DialTimeout("tcp", address, 1*time.Second)
+	if err != nil {
+		return false
+	}
+	conn.Close()
+	return true
+}
+
+// Simple Port Scanner
+
+func main() {
+	// Get target IP address from the user
+	ip := getStringInput("Enter the IP address to scan: ")
+
+	// Get port range from the user
+	startPort := getIntInput("Enter the start port: ")
+	endPort := getIntInput("Enter the end port: ")
+
+	if startPort < 1 || startPort > 65535 || endPort < 1 || endPort > 65535 || startPort > endPort {
+		fmt.Println("Invalid port range. Please ensure ports are between 1 and 65535 and start port is less than or equal to end port.")
+		return
+	}
+
+	fmt.Printf("Scanning ports from %d to %d on IP %s\n", startPort, endPort, ip)
+	for port := startPort; port <= endPort; port++ {
+		if scanPort(ip, port) {
+			fmt.Printf("Port %d is open\n", port)
+		}
+	}
+}
+
+// Function to get a valid string input from the user
+func getStringInput(prompt string) string {
+	var input string
+	for {
+		fmt.Print(prompt)
+		_, err := fmt.Scan(&input)
+		if err != nil {
+			fmt.Println("Invalid input:", err)
+			continue
+		}
+		if strings.TrimSpace(input) != "" {
+			return input
+		}
+		fmt.Println("Input cannot be empty. Please try again.")
+	}
+}
